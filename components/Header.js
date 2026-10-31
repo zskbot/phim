@@ -10,6 +10,7 @@ export default function Header() {
     event.preventDefault();
     const value = query.trim();
     router.push(value ? "/?q=" + encodeURIComponent(value) : "/");
+    window.dispatchEvent(new CustomEvent("phim-search", { detail: value }));
   }
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-[#08090d]/90 backdrop-blur-xl">
