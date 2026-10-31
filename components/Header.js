@@ -1,12 +1,11 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [query, setQuery] = useState("");
   const router = useRouter();
-  const params = useSearchParams();
   function submit(event) {
     event.preventDefault();
     const value = query.trim();
