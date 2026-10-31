@@ -10,6 +10,17 @@ export default function HomeFeed() {
   const [category, setCategory] = useState("Tất cả");
   const [source, setSource] = useState("demo");
   useEffect(() => {
+    const syncQuery = () => setQuery(new URLSearchParams(window.location.search).get("q") || "");
+    const handleSearch = event => setQuery(typeof event.detail === "string" ? event.detail : "");
+    syncQuery();
+    window.addEventListener("phim-search", handleSearch);
+    window.addEventListener("popstate", syncQuery);
+    return () => {
+      window.removeEventListener("phim-search", handleSearch);
+      window.removeEventListener("popstate", syncQuery);
+    };
+  }, []);
+  useEffect(() => {
     let active = true;
     async function load() {
       try {
