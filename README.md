@@ -1,31 +1,37 @@
 # PHIM. — Video Streaming Platform
 
-A Vietnamese-language streaming catalogue built with Next.js App Router, React and Tailwind CSS.
+Vietnamese streaming catalogue built with Next.js App Router, React and Tailwind CSS.
 
 ## Features
-- Responsive dark cinematic homepage and featured title
-- Search by title, genre and description
-- Genre filters and movie detail pages
-- HTML5 video player when a licensed video URL is configured
-- Lightweight self-declared age confirmation
-- Centralized catalogue in `data/videos.js`
-
-## Requirements
-- Node.js 20.9+
-- npm
+- Dynamic video feed through internal `GET /api/videos`
+- Provider response normalization (array, `results`, `data`, or `videos`)
+- Search, category filtering, featured title and dynamic detail routes
+- HTML5 playback for direct HTTPS media URLs
+- Iframe playback only for HTTPS hosts explicitly allowlisted
+- Browser feed refresh every five minutes; provider cache for 60 seconds
+- Demo catalogue fallback when no provider endpoint is configured
 
 ## Local development
+Requires Node.js 20.9+.
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 Open http://localhost:3000.
 
-## Add or edit titles
-Edit `data/videos.js`. Each entry needs a unique `id`, title, category, year, duration, rating, description and poster URL. Set `videoUrl` to a direct, authorized MP4/HLS-compatible source to enable playback. Keep it empty to show the player setup notice.
+## Configure a provider
+Set these variables in `.env.local` or Vercel Project Settings → Environment Variables:
+- `VIDEO_PROVIDER_API_URL`: HTTPS JSON endpoint owned by, or contractually provided to, your project.
+- `VIDEO_PROVIDER_API_KEY`: optional bearer token.
+- `VIDEO_EMBED_ALLOWED_HOSTS`: comma-separated hostnames authorized to serve iframe players.
 
-## Deployment
-Import this repository into Vercel. The framework is detected as Next.js; use `npm run build` for the build command and leave the output directory at its default.
+The provider may return a JSON array or an object containing `results`, `data`, or `videos`. Each item should include `id` (or `video_id`/ `slug`), `title`, and optional `description`, `category`, `year`, `duration`, `rating`, `views`, `poster`/ `thumbnail_url`, `backdrop`, `videoUrl`/ `video_url`, and `embedUrl`/ `embed_url`.
 
-## Content and rights
-Only add videos, artwork and streams that you own or are authorized to distribute. The age prompt is a self-declaration UI, not legal age or identity verification.
+Only HTTPS media URLs are accepted. Iframe URLs are ignored unless their hostname matches `VIDEO_EMBED_ALLOWED_HOSTS`. Keep API credentials private; never commit real secrets. Only ingest and stream content you own or are licensed to distribute.
+
+## API
+- `GET /api/videos` returns the normalized feed.
+- `GET /api/videos?id=<video-id>` returns one video or 404.
+
+Provider responses are cached for 60 seconds. The browser refreshes the feed every five minutes.
