@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { fetchPublicTelegramVideos, normalizeTelegramPublicLink } from "@/lib/telegram-public-feed";
-import { getTelegramPreviewStore } from "@/lib/telegram-preview-store";
+import { getTelegramPreviewStore, isTxtopDeployPreview } from "@/lib/telegram-preview-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function previewOnly() {
-  return process.env.CONTEXT === "deploy-preview" && Boolean(process.env.NETLIFY);
+  return isTxtopDeployPreview();
 }
 function denied() {
   return NextResponse.json({ success: false, error: "Preview only" }, { status: 404, headers: { "Cache-Control": "no-store" } });
