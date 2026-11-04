@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-cms";
 import { fetchPublicTelegramVideos, normalizeTelegramPublicLink } from "@/lib/telegram-public-feed";
 import { getTelegramPreviewStore } from "@/lib/telegram-preview-store";
 
@@ -12,20 +11,18 @@ function previewOnly() {
 function denied() {
   return NextResponse.json({ success: false, error: "Preview only" }, { status: 404, headers: { "Cache-Control": "no-store" } });
 }
-function unauthorized() {
-  return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
-}
 async function readSources(store) {
   const value = await store.get("sources-index", { type: "json" });
   return Array.isArray(value) ? value : [];
 }
 
-export async function GET(request) {
+export async function GET() {
   if (!previewOnly()) return denied();
-  if (!isAdminAuthorized(request)) return unauthorized();
   try {
     const store = getTelegramPreviewStore();
-    return NextResponse.json({ success: true, sources: await readSources(store) }, { headers: { "Cache-Control": "no-store" } });
+    const sources = await readSources(store);
+    if (!sources.some(item => item.channel === "txtop18")) sources.unshift({ channel: "txtop18", url: "https://t.me/txtop18", default: true });
+    return NextResponse.json({ success: true, sources }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("[telegram-sources]", error);
     return NextResponse.json({ success: false, error: "Preview source storage unavailable" }, { status: 503 });
@@ -34,7 +31,6 @@ export async function GET(request) {
 
 export async function POST(request) {
   if (!previewOnly()) return denied();
-  if (!isAdminAuthorized(request)) return unauthorized();
   try {
     const body = await request.json();
     const action = body?.action || "add";
@@ -54,11 +50,12 @@ export async function POST(request) {
       return NextResponse.json({ success: true, imported: posts.length, channel });
     }
     const normalized = normalizeTelegramPublicLink(body?.url);
-    if (!normalized) return NextResponse.json({ success: false, error: "Link phải là kênh hoặc nhóm Telegram công khai dạng https://t.me/ten_nguon." }, { status: 400 });
+    if (!normalized) return NextResponse.json({ success: false, error: "Chỉ nhận link Telegram công khai dạng https://t.me/ten_nguon." }, { status: 400 });
     if (sources.some(item => item.channel === normalized.channel)) {
       return NextResponse.json({ success: true, duplicate: true, sources });
     }
-    const next = [...sources, { ...normalized, addedAt: new Date().toISOString(), status: "active" }].slice(0, 10);
+    if (sources.length >= 10) return NextResponse.json({ success: false, error: "Preview chỉ hỗ trợ tối đa 10 nguồn." }, { status: 429 });
+    const next = [...sources, { ...normalized, addedAt: new Date().toISOString(), status: "active" }];
     await store.setJSON("sources-index", next);
     return NextResponse.json({ success: true, sources: next }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
@@ -69,7 +66,6 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   if (!previewOnly()) return denied();
-  if (!isAdminAuthorized(request)) return unauthorized();
   const channel = new URL(request.url).searchParams.get("channel") || "";
   if (!/^[a-z][a-z0-9_]{4,31}$/.test(channel) || channel === "txtop18") {
     return NextResponse.json({ success: false, error: "Nguồn không hợp lệ hoặc là nguồn mặc định." }, { status: 400 });
