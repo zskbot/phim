@@ -58,7 +58,7 @@ export async function POST(request) {
     if (sources.some(item => item.channel === normalized.channel)) {
       return NextResponse.json({ success: true, duplicate: true, sources });
     }
-    const next = [...sources, { ...normalized, addedAt: new Date().toISOString(), status: "active" }].slice(0, 50);
+    const next = [...sources, { ...normalized, addedAt: new Date().toISOString(), status: "active" }].slice(0, 10);
     await store.setJSON("sources-index", next);
     return NextResponse.json({ success: true, sources: next }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
