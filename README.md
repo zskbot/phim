@@ -36,3 +36,8 @@ Only HTTPS media URLs are accepted. Iframe URLs are ignored unless their hostnam
 - `GET /api/videos?id=<video-id>` returns one video or 404.
 
 Provider responses are cached for 60 seconds. The browser refreshes the feed every five minutes.
+
+
+## Public Telegram channel embeds (Preview)
+
+TX.TOP can list and embed public Telegram channel posts using the Preview-only `TELEGRAM_PUBLIC_POSTS_JSON` environment variable. Each entry contains a public channel username and numeric post ID; the app generates the official Telegram embed URL and links back to the source post. This mode does not download media, require a bot token, or use Supabase. See [the Preview setup guide](docs/TELEGRAM-PUBLIC-CHANNEL-EMBED-PREVIEW.md). Only include posts you own or are authorized to display.
