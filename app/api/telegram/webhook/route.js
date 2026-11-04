@@ -1,17 +1,22 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { getTelegramWebhookSecret } from "@/lib/telegram-public-feed";
 import { getTelegramPreviewStore, toTelegramPreviewPost } from "@/lib/telegram-preview-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
-  const expected = process.env.TELEGRAM_WEBHOOK_SECRET || "";
-  const supplied = request.headers.get("x-telegram-bot-api-secret-token") || "";
-  if (!expected || !supplied || supplied.length !== expected.length || supplied !== expected) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
   if (process.env.CONTEXT !== "deploy-preview" || !process.env.NETLIFY) {
     return NextResponse.json({ ok: false, error: "Preview only" }, { status: 404 });
+  }
+  const token = process.env.TELEGRAM_BOT_TOKEN || "";
+  const expected = token ? getTelegramWebhookSecret(token) : "";
+  const supplied = request.headers.get("x-telegram-bot-api-secret-token") || "";
+  const expectedBuffer = Buffer.from(expected);
+  const suppliedBuffer = Buffer.from(supplied);
+  if (!expected || expectedBuffer.length !== suppliedBuffer.length || !timingSafeEqual(expectedBuffer, suppliedBuffer)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
   }
   let update;
   try { update = await request.json(); }
